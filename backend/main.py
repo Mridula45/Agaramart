@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.routes.auth import router as auth_router
 from app.database.database import Base, engine
 from app.models import *
 
@@ -10,6 +11,8 @@ app = FastAPI(
     title="AgaramMart API",
     version="1.0.0"
 )
+
+app.include_router(auth_router)
 
 app.add_middleware(
     CORSMiddleware,
