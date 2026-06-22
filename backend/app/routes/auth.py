@@ -1,6 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+
 from app.schemas.user_schema import UserRegister
-from app.database.database import database
+from app.database.database import get_db
+from app.models.user import User
+from app.models.role import Role
 from app.utils.password import hash_password
 
 router = APIRouter(
@@ -8,12 +12,16 @@ router = APIRouter(
     tags=["Authentication"]
 )
 
-@router.post("/register")
-async def register_user(user: UserRegister):
 
-    existing_user = await database.users.find_one(
-        {"email": user.email}
-    )
+@router.post("/register")
+def register_user(
+    user: UserRegister,
+    db: Session = Depends(get_db)
+):
+
+    existing_user = db.query(User).filter(
+        User.email == user.email
+    ).first()
 
     if existing_user:
         raise HTTPException(
@@ -21,21 +29,31 @@ async def register_user(user: UserRegister):
             detail="Email already registered"
         )
 
-    user_data = {
-        "name": user.name,
-        "email": user.email,
-        "password": hash_password(
+    role = db.query(Role).filter(
+        Role.role_name == user.role
+    ).first()
+
+    if not role:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid role"
+        )
+
+    new_user = User(
+        name=user.name,
+        email=user.email,
+        password_hash=hash_password(
             user.password
         ),
-        "role": user.role,
-        "is_verified": False
-    }
-
-    result = await database.users.insert_one(
-        user_data
+        role_id=role.role_id,
+        is_verified=False
     )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
 
     return {
         "message": "User registered successfully",
-        "user_id": str(result.inserted_id)
+        "user_id": new_user.user_id
     }
