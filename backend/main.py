@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from app.database.database import database
 app = FastAPI(
     title="AgaramMart API",
     version="1.0.0"
@@ -29,4 +29,13 @@ async def root():
 async def health_check():
     return {
         "status": "healthy"
+    }
+
+@app.get("/db-test")
+async def db_test():
+    collections = await database.list_collection_names()
+
+    return {
+        "database": "connected",
+        "collections": collections
     }
