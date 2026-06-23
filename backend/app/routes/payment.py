@@ -49,3 +49,29 @@ def create_payment_order(
         "amount": payment_order["amount"],
         "currency": payment_order["currency"]
     }
+
+@router.post("/verify")
+def verify_payment(
+    razorpay_order_id: str,
+    razorpay_payment_id: str,
+    razorpay_signature: str
+):
+
+    try:
+
+        client.utility.verify_payment_signature({
+            "razorpay_order_id": razorpay_order_id,
+            "razorpay_payment_id": razorpay_payment_id,
+            "razorpay_signature": razorpay_signature
+        })
+
+        return {
+            "status": "Payment verified"
+        }
+
+    except:
+        raise HTTPException(
+            status_code=400,
+            detail="Payment verification failed"
+        )
+    
