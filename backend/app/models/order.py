@@ -34,7 +34,12 @@ class Order(Base):
         default="Pending"
 )
 
-    created_at = Column(
+payment_order_id = Column(
+    String(255),
+    nullable=True
+)
+
+created_at = Column(
         TIMESTAMP,
         server_default=func.now()
     )

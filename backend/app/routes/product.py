@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
@@ -14,12 +14,20 @@ router = APIRouter(
     tags=["Products"]
 )
 
+
 @router.post("/")
 def create_product(
     product: ProductCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+
+    # Only Vendor, Admin, SuperAdmin
+    if current_user.role_id not in [2, 3, 4]:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
 
     new_product = Product(
         vendor_id=current_user.user_id,
@@ -36,12 +44,113 @@ def create_product(
     db.refresh(new_product)
 
     return {
-        "message": "Product created",
+        "message": "Product created successfully",
         "product_id": new_product.product_id
     }
+
 
 @router.get("/")
 def get_products(
     db: Session = Depends(get_db)
 ):
     return db.query(Product).all()
+
+
+@router.get("/my-products")
+def get_my_products(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    products = db.query(Product).filter(
+        Product.vendor_id == current_user.user_id
+    ).all()
+
+    return products
+
+
+@router.put("/{product_id}")
+def update_product(
+    product_id: int,
+    product: ProductCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    # Client cannot update
+    if current_user.role_id == 1:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
+
+    existing_product = db.query(Product).filter(
+        Product.product_id == product_id
+    ).first()
+
+    if not existing_product:
+        raise HTTPException(
+            status_code=404,
+            detail="Product not found"
+        )
+
+    # Vendor can update only own products
+    if current_user.role_id == 2:
+        if existing_product.vendor_id != current_user.user_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied"
+            )
+
+    existing_product.product_name = product.product_name
+    existing_product.description = product.description
+    existing_product.price = product.price
+    existing_product.stock_quantity = product.stock_quantity
+    existing_product.category_id = product.category_id
+    existing_product.image_url = product.image_url
+
+    db.commit()
+
+    return {
+        "message": "Product updated successfully"
+    }
+
+
+@router.delete("/{product_id}")
+def delete_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    # Client cannot delete
+    if current_user.role_id == 1:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
+
+    product = db.query(Product).filter(
+        Product.product_id == product_id
+    ).first()
+
+    if not product:
+        raise HTTPException(
+            status_code=404,
+            detail="Product not found"
+        )
+
+    # Vendor can delete only own products
+    if current_user.role_id == 2:
+        if product.vendor_id != current_user.user_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied"
+            )
+
+    db.delete(product)
+    db.commit()
+
+    return {
+        "message": "Product deleted successfully"
+    }

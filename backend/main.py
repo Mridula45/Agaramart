@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.order import router as order_router
 from app.routes.auth import router as auth_router
@@ -9,11 +10,17 @@ from app.routes.product import router as product_router
 from app.routes.admin import router as admin_router
 from app.routes.cart import router as cart_router
 from app.routes.payment import router as payment_router
+from app.routes.upload import router as upload_router
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="AgaramMart API",
     version="1.0.0"
+)
+app.mount(
+    "/uploads",
+    StaticFiles(directory="uploads"),
+    name="uploads"
 )
 app.include_router(order_router)
 app.include_router(auth_router)
@@ -22,6 +29,7 @@ app.include_router(product_router)
 app.include_router(admin_router)
 app.include_router(cart_router)
 app.include_router(payment_router)
+app.include_router(upload_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],

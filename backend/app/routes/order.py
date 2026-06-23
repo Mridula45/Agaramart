@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
+from fastapi import HTTPException
 from app.database.database import get_db
 from app.models.order import Order
 from app.models.order_item import OrderItem
@@ -99,12 +99,45 @@ def get_my_orders(
     current_user: User = Depends(get_current_user)
 ):
 
-    orders = db.query(Order).filter(
+    if current_user.role_id in [3, 4]:
+        return db.query(Order).all()
+
+    return db.query(Order).filter(
         Order.user_id == current_user.user_id
     ).all()
 
-    return orders
+@router.put("/status/{order_id}")
+def update_order_status(
+    order_id: int,
+    status: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
 
+    if current_user.role_id not in [3, 4]:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
+
+    order = db.query(Order).filter(
+        Order.order_id == order_id
+    ).first()
+
+    if not order:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found"
+        )
+
+    order.status = status
+
+    db.commit()
+
+    return {
+        "message": "Order status updated",
+        "status": order.status
+    }
 
 @router.get("/{order_id}")
 def get_order_details(
@@ -113,10 +146,19 @@ def get_order_details(
     current_user: User = Depends(get_current_user)
 ):
 
-    order = db.query(Order).filter(
-        Order.order_id == order_id,
-        Order.user_id == current_user.user_id
-    ).first()
+    # Admin and SuperAdmin can view any order
+    if current_user.role_id in [3, 4]:
+
+        order = db.query(Order).filter(
+            Order.order_id == order_id
+        ).first()
+
+    else:
+
+        order = db.query(Order).filter(
+            Order.order_id == order_id,
+            Order.user_id == current_user.user_id
+        ).first()
 
     if not order:
         raise HTTPException(
@@ -132,3 +174,4 @@ def get_order_details(
         "order": order,
         "items": order_items
     }
+

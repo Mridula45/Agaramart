@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import razorpay
-
+from fastapi import HTTPException
 from app.database.database import get_db
 from app.models.order import Order
 from app.models.user import User
@@ -44,17 +44,22 @@ def create_payment_order(
         "receipt": f"order_{order.order_id}"
     })
 
+    order.payment_order_id = payment_order["id"]
+
+    db.commit()
+
     return {
-        "razorpay_order_id": payment_order["id"],
-        "amount": payment_order["amount"],
-        "currency": payment_order["currency"]
-    }
+    "razorpay_order_id": payment_order["id"],
+    "amount": payment_order["amount"],
+    "currency": payment_order["currency"]
+}
 
 @router.post("/verify")
 def verify_payment(
     razorpay_order_id: str,
     razorpay_payment_id: str,
-    razorpay_signature: str
+    razorpay_signature: str,
+    db: Session = Depends(get_db)
 ):
 
     try:
@@ -65,13 +70,21 @@ def verify_payment(
             "razorpay_signature": razorpay_signature
         })
 
+        order = db.query(Order).filter(
+            Order.payment_order_id == razorpay_order_id
+        ).first()
+
+        if order:
+            order.payment_status = "Paid"
+            db.commit()
+
         return {
-            "status": "Payment verified"
+            "message": "Payment verified successfully"
         }
 
-    except:
+    except Exception:
+
         raise HTTPException(
             status_code=400,
             detail="Payment verification failed"
         )
-    
