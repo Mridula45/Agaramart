@@ -1,30 +1,59 @@
-# app/models/product.py
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    ForeignKey,
+    DECIMAL,
+    Boolean,
+    TIMESTAMP
+)
 
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DECIMAL, Boolean
 from sqlalchemy.sql import func
-from sqlalchemy import TIMESTAMP
-
 from app.database.database import Base
 
 class Product(Base):
     __tablename__ = "products"
 
-    product_id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
-    vendor_id = Column(Integer, ForeignKey("users.user_id"))
-    category_id = Column(Integer, ForeignKey("categories.category_id"))
+    vendor_id = Column(
+        Integer,
+        ForeignKey("users.user_id")
+    )
 
-    product_name = Column(String(255), nullable=False)
+    category_id = Column(
+        Integer,
+        ForeignKey("categories.category_id")
+    )
+
+    product_name = Column(
+        String(255),
+        nullable=False
+    )
 
     description = Column(Text)
 
-    price = Column(DECIMAL(10,2), nullable=False)
+    price = Column(
+        DECIMAL(10,2),
+        nullable=False
+    )
 
-    stock_quantity = Column(Integer, default=0)
+    stock_quantity = Column(
+        Integer,
+        default=0
+    )
 
     image_url = Column(Text)
 
-    is_active = Column(Boolean, default=True)
+    is_active = Column(
+        Boolean,
+        default=True
+    )
 
     created_at = Column(
         TIMESTAMP,
