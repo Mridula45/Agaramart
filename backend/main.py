@@ -7,7 +7,7 @@ from app.models import *
 from app.routes.category import router as category_router
 from app.routes.product import router as product_router
 from app.routes.admin import router as admin_router
-
+from app.routes.cart import router as cart_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -20,6 +20,7 @@ app.include_router(auth_router)
 app.include_router(category_router)
 app.include_router(product_router)
 app.include_router(admin_router)
+app.include_router(cart_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
