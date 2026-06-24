@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.schemas.user_schema import UserRegister, UserLogin
 from app.database.database import get_db
-
+from fastapi import Request
+from app.core.limiter import limiter
 from app.models.user import User
 from app.models.role import Role
 
@@ -15,6 +16,15 @@ from app.utils.password import (
 from app.utils.jwt_handler import create_access_token
 from app.utils.auth import get_current_user
 from app.utils.roles import require_role
+import random
+
+from app.schemas.user_schema import (
+    ForgotPasswordRequest
+)
+
+from app.utils.email import (
+    send_reset_email
+)
 
 router = APIRouter(
     prefix="/api/auth",
@@ -69,11 +79,12 @@ def register_user(
 
 
 @router.post("/login")
+@limiter.limit("Try again later")
 def login_user(
+    request: Request,
     user: UserLogin,
     db: Session = Depends(get_db)
 ):
-
     db_user = db.query(User).filter(
         User.email == user.email
     ).first()
@@ -152,4 +163,40 @@ def client_dashboard(
 
     return {
         "message": "Welcome Client"
+    }
+
+@router.post("/forgot-password")
+async def forgot_password(
+    request: ForgotPasswordRequest,
+    db: Session = Depends(get_db)
+):
+
+    user = db.query(User).filter(
+        User.email == request.email
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="Email not found"
+        )
+
+    otp = str(
+        random.randint(
+            100000,
+            999999
+        )
+    )
+
+    print(
+        f"OTP for {request.email}: {otp}"
+    )
+
+    await send_reset_email(
+        request.email,
+        otp
+    )
+
+    return {
+        "message": "OTP sent successfully"
     }
