@@ -38,6 +38,11 @@ class Order(Base):
         nullable=True
     )
 
+    payment_id = Column(
+    String(255),
+    nullable=True
+)
+
     created_at = Column(
         TIMESTAMP,
         server_default=func.now()

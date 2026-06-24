@@ -95,6 +95,8 @@ def verify_payment(
 
         if order:
             order.payment_status = "Paid"
+            order.payment_id = razorpay_payment_id
+
             db.commit()
 
         return {
