@@ -1,8 +1,7 @@
-# app/models/order.py
-
 from sqlalchemy import Column, Integer, ForeignKey, Numeric, String, TIMESTAMP
 from sqlalchemy.sql import func
 from app.database.database import Base
+
 
 class Order(Base):
     __tablename__ = "orders"
@@ -20,7 +19,7 @@ class Order(Base):
     )
 
     total_amount = Column(
-        Numeric(10,2),
+        Numeric(10, 2),
         nullable=False
     )
 
@@ -32,15 +31,14 @@ class Order(Base):
     payment_status = Column(
         String(50),
         default="Pending"
-)
+    )
 
-payment_order_id = Column(
-    String(255),
-    nullable=True
-)
+    payment_order_id = Column(
+        String(255),
+        nullable=True
+    )
 
-created_at = Column(
+    created_at = Column(
         TIMESTAMP,
         server_default=func.now()
     )
-   

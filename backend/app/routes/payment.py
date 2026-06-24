@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import razorpay
-from fastapi import HTTPException
+
 from app.database.database import get_db
 from app.models.order import Order
 from app.models.user import User
+
 from app.utils.auth import get_current_user
 from app.core.config import settings
 
@@ -20,6 +21,7 @@ client = razorpay.Client(
     )
 )
 
+
 @router.post("/create-order/{order_id}")
 def create_payment_order(
     order_id: int,
@@ -27,10 +29,19 @@ def create_payment_order(
     current_user: User = Depends(get_current_user)
 ):
 
-    order = db.query(Order).filter(
-        Order.order_id == order_id,
-        Order.user_id == current_user.user_id
-    ).first()
+    # Admin and SuperAdmin can access any order
+    if current_user.role_id in [3, 4]:
+
+        order = db.query(Order).filter(
+            Order.order_id == order_id
+        ).first()
+
+    else:
+
+        order = db.query(Order).filter(
+            Order.order_id == order_id,
+            Order.user_id == current_user.user_id
+        ).first()
 
     if not order:
         raise HTTPException(
@@ -44,15 +55,23 @@ def create_payment_order(
         "receipt": f"order_{order.order_id}"
     })
 
+    print("Razorpay Order ID:", payment_order["id"])
+
     order.payment_order_id = payment_order["id"]
 
+    print("Before Commit:", order.payment_order_id)
+
     db.commit()
+    db.refresh(order)
+
+    print("After Commit:", order.payment_order_id)
 
     return {
-    "razorpay_order_id": payment_order["id"],
-    "amount": payment_order["amount"],
-    "currency": payment_order["currency"]
-}
+        "razorpay_order_id": payment_order["id"],
+        "amount": payment_order["amount"],
+        "currency": payment_order["currency"]
+    }
+
 
 @router.post("/verify")
 def verify_payment(
