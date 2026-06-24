@@ -34,18 +34,14 @@ export default function LoginPage() {
       alert("Login Successful");
 
       router.push("/products");
-
     } catch (error: any) {
-  console.error(error);
+      console.error(error);
 
-  console.log("FULL ERROR:", error.response);
-
-  alert(
-    error.response?.data?.detail ||
-    JSON.stringify(error.response?.data) ||
-    "Failed to place order"
-  );
-}
+      alert(
+        error.response?.data?.detail ||
+        "Login Failed"
+      );
+    }
   };
 
   return (
