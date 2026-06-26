@@ -49,13 +49,13 @@ def register_user(
         )
 
     role = db.query(Role).filter(
-        Role.role_name == user.role
+        Role.role_name == "client"
     ).first()
 
     if not role:
         raise HTTPException(
-            status_code=400,
-            detail="Invalid role"
+            status_code=500,
+            detail="Default client role not found"
         )
 
     new_user = User(

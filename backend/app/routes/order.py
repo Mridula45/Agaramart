@@ -8,7 +8,7 @@ from app.models.cart import Cart
 from app.models.cart_item import CartItem
 from app.models.product import Product
 from app.models.user import User
-
+from app.schemas.order_schema import PlaceOrderRequest
 from app.utils.auth import get_current_user
 
 router = APIRouter(
@@ -19,8 +19,13 @@ router = APIRouter(
 
 @router.post("/place")
 def place_order(
+
+    order_request: PlaceOrderRequest,
+
     db: Session = Depends(get_db),
+
     current_user: User = Depends(get_current_user)
+
 ):
 
     cart = db.query(Cart).filter(
@@ -56,10 +61,16 @@ def place_order(
         )
 
     order = Order(
-        user_id=current_user.user_id,
-        total_amount=total_amount,
-        status="Pending"
-    )
+
+    user_id=current_user.user_id,
+
+    address_id=order_request.address_id,
+
+    total_amount=total_amount,
+
+    status="Pending"
+
+)
 
     db.add(order)
     db.commit()
@@ -130,6 +141,22 @@ def update_order_status(
             detail="Order not found"
         )
 
+    allowed_status = [
+        "Pending",
+        "Accepted",
+        "Packed",
+        "Shipped",
+        "Out for Delivery",
+        "Delivered",
+        "Cancelled"
+    ]
+
+    if status not in allowed_status:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid status"
+        )
+
     order.status = status
 
     db.commit()
@@ -175,3 +202,25 @@ def get_order_details(
         "items": order_items
     }
 
+@router.get("/vendor-orders")
+def get_vendor_orders(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    if current_user.role_id != 2:
+        raise HTTPException(
+            status_code=403,
+            detail="Only vendors can access this."
+        )
+
+    orders = (
+        db.query(Order)
+        .join(OrderItem, Order.order_id == OrderItem.order_id)
+        .join(Product, Product.product_id == OrderItem.product_id)
+        .filter(Product.vendor_id == current_user.user_id)
+        .distinct()
+        .all()
+    )
+
+    return orders

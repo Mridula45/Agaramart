@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from app.routes.address import router as address_router
+from app.routes.vendor import router as vendor_router
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.order import router as order_router
@@ -36,6 +38,8 @@ app.include_router(admin_router)
 app.include_router(cart_router)
 app.include_router(payment_router)
 app.include_router(upload_router)
+app.include_router(vendor_router)
+app.include_router(address_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[

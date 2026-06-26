@@ -47,3 +47,9 @@ class Order(Base):
         TIMESTAMP,
         server_default=func.now()
     )
+
+    address_id = Column(
+    Integer,
+    ForeignKey("addresses.address_id"),
+    nullable=True
+)
