@@ -31,14 +31,13 @@ export default function RegisterPage() {
 
     try {
       await axios.post(
-        "http://127.0.0.1:8000/api/auth/register",
-        {
-          name,
-          email,
-          password,
-          role: "client",
-        }
-      );
+  "http://127.0.0.1:8000/api/auth/register",
+  {
+    name,
+    email,
+    password,
+  }
+);
 
       alert("Registration Successful");
 

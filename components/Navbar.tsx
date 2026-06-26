@@ -1,8 +1,13 @@
 "use client";
-
+import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 
 export default function Navbar() {
+  const { user, logout } = useAuth();
+{user?.name}
+<button onClick={logout}>
+Logout
+</button>
   return (
     <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/5 border-b border-white/10">
       <div className="max-w-7xl mx-auto px-8 py-4 flex justify-between items-center">
